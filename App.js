@@ -32,6 +32,7 @@ import Toast from 'react-native-simple-toast';
 const App = () => {
   const [isScanning, setIsScanning] =  useState(false);
   const [isBluetoothOn, setIsBluetoothOn] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const peripherals = new Map();
   const [list, setList] = useState([]);
 
@@ -43,17 +44,18 @@ const App = () => {
   );
   BluetoothSerial.on('error', err => console.log(`Error: ${err.message}`));
   BluetoothSerial.on('connectionLost', () => {
-    if (this.state.device) {
-      Toast.show(
-        'Connection to device ${this.state.device.name} has been lost',
-      );
-    }
-    this.setState({connected: false});
+    Toast.show('Disconnected device');
+    setIsConnected(false);
+  });
+
+  BluetoothSerial.on('connectionSuccess', () => {
+    Toast.show('Connected device');
+    setIsConnected(true);
   });
 
   Promise.all(() => {
     BluetoothSerial.list();
-  })
+  });
 
   const pairedDevices = async () => {
     const devices = await BluetoothSerial.list();
@@ -91,8 +93,20 @@ const App = () => {
   };
 
   const connectToDevice = async id => {
-    const device = await BluetoothSerial.connect(id);
-    console.log(device);
+    await BluetoothSerial.connect(id).then(device => {
+      console.log(device);
+      // setIsConnected(true);
+    });
+  };
+
+  const disconnectDevice = async () => {
+    await BluetoothSerial.disconnect();
+  };
+
+  const sendString = async () => {
+    await BluetoothSerial.write('a').then(() => {
+      Toast.show('data sent');
+    });
   };
 
   const cancelDiscovery = async () => {
@@ -160,6 +174,19 @@ const App = () => {
             title={'Toggle Bluetooth (' + (isBluetoothOn ? 'on' : 'off') + ')'}
             onPress={() => toggle()}
           />
+        </View>
+        <View>
+          {/* <Text>{BluetoothSerial.isConnected() ? 'Board is connected' : 'Not connected'} </Text> */}
+          {isConnected ? (
+            <Button title={'Disconnect'} onPress={() => disconnectDevice()} />
+          ) : (
+            <Text> '' </Text>
+          )}
+          {isConnected ? (
+            <Button title={'Send string'} onPress={() => sendString('a')} />
+          ) : (
+            <Text> '' </Text>
+          )}
         </View>
       </View>
       <FlatList1 />
