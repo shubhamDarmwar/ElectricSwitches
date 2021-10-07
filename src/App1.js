@@ -28,13 +28,15 @@ import {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import BluetoothSerial from 'react-native-bluetooth-serial';
 import Toast from 'react-native-simple-toast';
+import BluetoothManager from './BluetoothManager';
 
 const App = () => {
-  const [isScanning, setIsScanning] =  useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [isBluetoothOn, setIsBluetoothOn] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const peripherals = new Map();
   const [list, setList] = useState([]);
+  const bluetoothManager = new BluetoothManager();
 
   BluetoothSerial.on('bluetoothEnabled', () => {
     Toast.show('Bluetooth enabled');
@@ -53,46 +55,12 @@ const App = () => {
     setIsConnected(true);
   });
 
-  Promise.all(() => {
-    BluetoothSerial.list();
-  });
-
-  const pairedDevices = async () => {
-    const devices = await BluetoothSerial.list();
-    console.log(devices);
-    var rows = [];
-    for (var i = 0; i < devices.length; i++) {
-      var obj = {};
-      obj.title = devices[i].name;
-      rows.push(obj);
-    }
-    setList(rows);
-  };
-
-  const unpairedDevices = async () => {
-    setIsScanning(true);
-    await BluetoothSerial.discoverUnpairedDevices()
-      .then(devices => {
-        var rows = [];
-        for (var i = 0; i < devices.length; i++) {
-          var obj = {};
-          if (devices[i].name) {
-            obj.title = devices[i].name;
-            obj.id = devices[i].id;
-            rows.push(obj);
-          }
-        }
-        setList(rows);
-        console.log(devices);
-        setIsScanning(false);
-        console.log('Scanning done');
-      })
-      .catch(() => {
-        console.log('Scanning failed');
-      });
-  };
+  // Promise.all(() => {
+  //   BluetoothSerial.list();
+  // });
 
   const connectToDevice = async id => {
+    console.log('Connecting');
     await BluetoothSerial.connect(id).then(device => {
       console.log(device);
       // setIsConnected(true);
@@ -116,7 +84,7 @@ const App = () => {
   };
 
   const toggle = async () => {
-    if (isBluetoothOn == true) {
+    if (isBluetoothOn === true) {
       setIsBluetoothOn(false);
       await BluetoothSerial.disable();
     } else {
@@ -133,11 +101,11 @@ const App = () => {
           // renderItem={({item}) => <Text style={styles.item}>{item.title}</Text>}
           renderItem={({item}) =>
             <Button
-              // style={styles.item}
               title={item.title}
               onPress={() => connectToDevice(item.id)}
             />
-          }/>
+          }
+        />
       </View>
     );
   };
@@ -149,26 +117,25 @@ const App = () => {
         <View style={{margin: 10}}>
           <Button
             title={'Paired devices'}
-            onPress={() => pairedDevices()}
+            onPress={() => BluetoothManager.pairedDevices((rows) => {
+              console.log(rows);
+            })}
           />
         </View>
 
         <View style={{margin: 10}}>
           <Button
-            title={'Unpaired devices (' + (isScanning ? 'on' : 'off') + ')'}
-            onPress={() => unpairedDevices()}
+            title={'Unpaired devices (' + (bluetoothManager.isScanning ? 'on' : 'off') + ')'}
+            onPress={() => bluetoothManager.unpairedDevices((rows) => {
+                console.log(rows);
+                setList(rows);
+            })}
           />
         </View>
         <View style={{margin: 10}}>
           <Button title="Cancel discovery" onPress={() => cancelDiscovery()} />
         </View>
 
-        {/* <View style={{margin: 10}}>
-          <Button
-            title="Retrieve discovered"
-            onPress={() => retrieveDiscovered()}
-          />
-        </View> */}
         <View style={{margin: 10}}>
           <Button
             title={'Toggle Bluetooth (' + (isBluetoothOn ? 'on' : 'off') + ')'}
@@ -176,7 +143,6 @@ const App = () => {
           />
         </View>
         <View>
-          {/* <Text>{BluetoothSerial.isConnected() ? 'Board is connected' : 'Not connected'} </Text> */}
           {isConnected ? (
             <Button title={'Disconnect'} onPress={() => disconnectDevice()} />
           ) : (
