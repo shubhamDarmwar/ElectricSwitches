@@ -14,11 +14,14 @@ const RoundedButton = props => {
         activeOpacity={1}
         title={props.name}
         onPress={() => {
-          setPressed(false);
+          // setPressed(false);
           props.onPress();
         }}
         onPressIn={() => {
           setPressed(true);
+        }}
+        onPressOut={() => {
+          setPressed(false);
         }}>
         <View style={Styles.root}>
           <ImageBackground
