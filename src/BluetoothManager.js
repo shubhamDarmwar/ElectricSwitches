@@ -7,8 +7,10 @@ import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
 
 class BluetoothManager {
   bluetoothStateUpdated;
+  connectionStatusUpdated;
   isScanning = false;
   isBluetoothOn = false;
+  isConnected = false;
   storeKey = 'deviceId';
 
   storeDeviceId = async value => {
@@ -38,19 +40,20 @@ class BluetoothManager {
   constructor() {
     // console.log('Bluetooth manager initialized');
     BluetoothSerial.on('bluetoothEnabled', () => {
-      // console.log('Bluetooth enabled w');
       if (this.bluetoothStateUpdated) {
         this.bluetoothStateUpdated();
-      } else {
-        // console.log('bluetoothStateUpdated not  set');
       }
     });
     BluetoothSerial.on('bluetoothDisabled', () => {
-      // console.log('Bluetooth disabled w');
       if (this.bluetoothStateUpdated) {
         this.bluetoothStateUpdated();
-      } else {
-        // console.log('bluetoothStateUpdated not  set');
+      }
+    });
+
+    BluetoothSerial.on('connectionLost', () => {
+      if (this.connectionStatusUpdated) {
+        this.connectionStatusUpdated();
+        this.isConnected = false;
       }
     });
 
@@ -61,7 +64,7 @@ class BluetoothManager {
       interval: 10000,
       fastInterval: 5000,
     })
-      .then((data) => {
+      .then(data => {
         console.log(`GPS = ${data}`);
         callback();
         // The user has accepted to enable the location services
@@ -69,7 +72,7 @@ class BluetoothManager {
         //  - "already-enabled" if the location services has been already enabled
         //  - "enabled" if user has clicked on OK button in the popup
       })
-      .catch((err) => {
+      .catch(err => {
         console.log(`GPS error = ${err.message}`);
         // The user has not accepted to enable the location services or something went wrong during the process
         // "err" : { "code" : "ERR00|ERR01|ERR02|ERR03", "message" : "message"}
@@ -126,17 +129,14 @@ class BluetoothManager {
         callback(device);
         this.storeDeviceId(id);
         console.log('Connected');
+        this.isConnected = true;
+        if (this.connectionStatusUpdated){
+          this.connectionStatusUpdated();
+        }
       })
       .catch(err => {
         console.log(`catched : ${err}`);
       });
-      // .then(device => {
-        
-      // })
-      // .error(err => {
-      //   // console.log('Connection  error');
-      //   // console.log(err);
-      // });
   }
 
   async connectToDefaultDevice(callback) {

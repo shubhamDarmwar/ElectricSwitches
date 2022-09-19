@@ -1,21 +1,15 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, Component} from 'react';
-import Geolocation from '@react-native-community/geolocation';
+import React, {Component} from 'react';
 
 import {
   View,
-  Text,
   FlatList,
   // TouchableOpacity,
   // TouchableWithoutFeedback,
-  TouchableHighlight,
   SafeAreaView,
-  Dimensions,
   Image,
-  ImageBackground,
   StatusBar,
-  Alert,
-  Toast
+  ToastAndroid,
 } from 'react-native';
 
 import BluetoothManager from './BluetoothManager';
@@ -58,10 +52,13 @@ class SettingScreen extends Component {
     // this.enableBluetooth();
     bluetoothManager.enableBluetooth(() => {
       this.setState({isBluetoothEnabled: true});
+      // console.log('Bluetooth enabled !!')
+      // ToastAndroid.show('Bluetooth enabled !!', ToastAndroid.SHORT);
     });
     // console.log(`${this.state.isBluetoothEnabled}  ${this.state.isLocationEnabled}`)
     bluetoothManager.connectToDefaultDevice(() => {
       console.log('Connected to device');
+      ToastAndroid.show('Connected to default device', ToastAndroid.SHORT);
     });
     bluetoothManager.enableGPS(() => {
       this.setState({isLocationEnabled: true});
@@ -74,6 +71,7 @@ class SettingScreen extends Component {
       isBluetoothOn: true,
       isLocationEnabled: false,
       isBluetoothEnabled: false,
+      isConnected: false,
     };
   }
 
@@ -88,6 +86,16 @@ class SettingScreen extends Component {
     bluetoothManager.bluetoothStateUpdated = () => {
       console.log(`Bluetooth  State update ${bluetoothManager.isBluetoothOn}`);
       this.setState({isBluetoothEnabled: bluetoothManager.isBluetoothOn});
+      // ToastAndroid.show('Bluetooth enabled !!', ToastAndroid.SHORT);
+    };
+
+    bluetoothManager.connectionStatusUpdated = () => {
+      console.log(`Connection state update ${bluetoothManager.isBluetoothOn}`);
+      this.setState({isConnected: bluetoothManager.isConnected});
+      ToastAndroid.show(
+        `Connection status ${bluetoothManager.isConnected}`,
+        ToastAndroid.SHORT,
+      );
     };
     return (
       <SafeAreaView
@@ -116,7 +124,9 @@ class SettingScreen extends Component {
           <View style={{flex: 1, justifyContent: 'flex-start'}}>
             <RoundedButton
               image={
-                this.state.isBluetoothEnabled && this.state.isLocationEnabled
+                this.state.isBluetoothEnabled &&
+                this.state.isLocationEnabled &&
+                this.state.isConnected
                   ? require('./images/power_green.png')
                   : require('./images/power_white.png')
               }
@@ -127,7 +137,8 @@ class SettingScreen extends Component {
                 // });
 
                 this.enableRemote();
-              }}/>
+              }}
+            />
           </View>
         </View>
         <ButtonView devices={buttons} />
